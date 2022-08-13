@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import userSchema from "../model/userSchema.js";
 import jwt from "jsonwebtoken";
-import generateRandomUsername from "../utils/utils.js";
+import { generateRandomUsername } from "../utils/utils.js";
 
 // for new user registration ==============>>>>>>>>>>>>>>>>>>>>>>>>>
 export const register = async (req, res, next) => {
@@ -37,7 +37,7 @@ export const register = async (req, res, next) => {
     const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
 
     // sending the response to the user
-    return res.status(201).json({ success: true, msg: "user created", user: user, token: token, extra: req.extraMsg || null });
+    return res.status(201).json({ msg: "Registration Successful, Logging In", email: email, token: token });
   } catch (error) {
     return res.status(501).json({ success: false, error: error.message });
   }
@@ -50,43 +50,49 @@ export const login = async (req, res, next) => {
 
   if (!email || !password) return res.status(400).json({ success: false, msg: "all the fields are required" });
 
-  let user = await userSchema.findOne({ email: email }, { password: 1 });
+  let user = await userSchema.findOne({ email: email }, { password: 1, email: 1 });
 
   if (!user) return res.status(400).json({ success: false, msg: "this account does not exist." });
 
   if (await bcrypt.compare(password, user.password)) {
     const token = jwt.sign({ email: email, _id: user._id }, process.env.JWT_SECRET);
-    return res.status(200).json({ success: true, token: token });
-  } else return res.status(200).json({ success: false, msg: "invalid password" });
+    return res.status(200).json({ email: user.email, token: token });
+  } else return res.status(400).json({ success: false, msg: "invalid password" });
 };
 
-// for forget password ==============>>>>>>>>>>>>>>>>>>>>>>>>>
-export const forgetPassword = async (req, res, next) => {
-  let { email } = req.body;
-  if (!email) return res.status(400).json({ success: false, msg: "email is required" });
-  let user = await userSchema.findOne({ email: email });
-  if (user) {
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: "10m" });
-    return res.status(200).json({ token: token });
-  } else return res.status(400).json({ success: false, msg: "this account does not exists" });
-};
+// // for forget password ==============>>>>>>>>>>>>>>>>>>>>>>>>>
+// export const forgetPassword = async (req, res, next) => {
+//   try {
+//     let { email } = req.body;
+//     if (!email) return res.status(400).json({ success: false, msg: "email is required" });
+//     let user = await userSchema.findOne({ email: email });
+//     if (user) {
+//       sendMail(email);
+//       return res.status(200).send("Mail has been sent, Check you Mail Inbox");
+//     } else return res.status(400).json({ success: false, msg: "this account does not exists" });
+//   } catch (error) {
+//     return res.status(400).json({ msg: error });
+//   }
+// };
 
 // for reset password ==============>>>>>>>>>>>>>>>>>>>>>>>>>
-export const resetPassword = async (req, res, next) => {
-  try {
-    let { authorization } = req.headers;
-    let { password } = req.body;
-    console.log(password);
-    let token = authorization.split(" ")[1];
-    if (!token) return res.status(400).json({ msg: "you are not authorized" });
-    let { _id } = jwt.verify(token, process.env.JWT_SECRET);
-    let user = await userSchema.findById(_id);
-    if (user) {
-      let cryptPass = await bcrypt.hash(password, 10);
-      await userSchema.findByIdAndUpdate(_id, { password: cryptPass });
-      return res.status(200).json({ msg: "password has successfully changed! Enjoy" });
-    } else return res.status(200).json({ msg: "user does not exists" });
-  } catch (error) {
-    return res.json({ error: error?.message });
-  }
-};
+// export const resetPassword = async (req, res, next) => {
+//   try {
+//     // let { authorization } = req.headers;
+//     let { resetToken } = req.url;
+//     let { password } = req.body;
+//     // console.log(password);
+//     // let token = authorization.split(" ")[1];
+//     if (!resetToken) return res.status(400).json({ msg: "you are not authorized" });
+//     if (password.length < 5) return res.status(400).json({ msg: "password must be greater than 5 characters" });
+//     let { email } = jwt.verify(resetToken, process.env.JWT_SECRET);
+//     let user = await userSchema.findOne({ email: email });
+//     if (user) {
+//       let cryptPass = await bcrypt.hash(password, 10);
+//       await userSchema.findOneAndUpdate({ email: email }, { password: cryptPass });
+//       return res.status(200).json({ msg: "password has successfully changed! Enjoy" });
+//     } else return res.status(200).json({ msg: "user does not exists" });
+//   } catch (error) {
+//     return res.json({ error: error?.message });
+//   }
+// };

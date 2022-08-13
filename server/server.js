@@ -1,16 +1,21 @@
 import dotenv from "dotenv";
 dotenv.config();
-import express, { urlencoded } from "express";
+import cors from "cors";
+import express from "express";
 import mongoose from "mongoose";
-
-import userRouter from "./routes/user.js";
 
 let server = express();
 
+server.use(cors());
+
+import userRouter from "./routes/user.js";
+import homeRouter from "./routes/home.js";
+
 server.use(express.json());
-server.use(urlencoded({ extended: false }));
+server.use(express.urlencoded({ extended: false }));
 
 server.use("/api/auth", userRouter);
+server.use("/", homeRouter);
 
 const start = async () => {
   await mongoose.connect(process.env.DB_URL);
