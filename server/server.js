@@ -3,7 +3,7 @@ dotenv.config();
 import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
-
+import authorAndBooksRouter from "./routes/authorAndBooks.js";
 let server = express();
 
 server.use(cors());
@@ -15,6 +15,7 @@ server.use(express.json());
 server.use(express.urlencoded({ extended: false }));
 
 server.use("/api/auth", userRouter);
+server.use("/", authorAndBooksRouter);
 server.use("/", homeRouter);
 
 const start = async () => {
